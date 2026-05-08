@@ -1,0 +1,122 @@
+---
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'A blog by Xavier Jamito' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <title>{title}</title>
+    <!-- Prevent flash of wrong theme -->
+    <script is:inline>
+      const t = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.classList.toggle('dark', t === 'dark');
+    </script>
+  </head>
+  <body class="min-h-screen" style="background-color: var(--color-bg);">
+
+    <header class="border-b" style="border-color: var(--color-border);">
+      <div class="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+        <a href="/" class="font-serif text-lg font-medium transition-colors" style="color: var(--color-text);">
+          Xavier Jamito
+        </a>
+        <nav class="flex items-center gap-5">
+          <a href="/" class="text-sm transition-colors" style="color: var(--color-text-muted);">writing</a>
+          <a href="/tags" class="text-sm transition-colors" style="color: var(--color-text-muted);">tags</a>
+          <ThemeToggle />
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-6 py-12">
+      <slot />
+    </main>
+
+    <footer class="border-t mt-24" style="border-color: var(--color-border);">
+      <div class="max-w-2xl mx-auto px-6 py-6 text-sm" style="color: var(--color-text-muted);">
+        Xavier Jamito
+      </div>
+    </footer>
+
+    <!-- Footnote popup -->
+    <div class="footnote-overlay" id="footnote-overlay"></div>
+    <div class="footnote-popup" id="footnote-popup">
+      <div class="footnote-popup-label" id="footnote-popup-label"></div>
+      <div id="footnote-popup-content"></div>
+      <button class="footnote-popup-close" id="footnote-popup-close" aria-label="Close">✕</button>
+    </div>
+
+    <script is:inline>
+      (function () {
+        const popup    = document.getElementById('footnote-popup');
+        const overlay  = document.getElementById('footnote-overlay');
+        const content  = document.getElementById('footnote-popup-content');
+        const label    = document.getElementById('footnote-popup-label');
+        const closeBtn = document.getElementById('footnote-popup-close');
+
+        function open(refEl, number, html) {
+          label.textContent = 'Note ' + number;
+          content.innerHTML = html;
+          popup.classList.add('active');
+          overlay.classList.add('active');
+
+          // Position near the clicked superscript
+          const rect = refEl.getBoundingClientRect();
+          let top  = rect.bottom + window.scrollY + 8;
+          let left = rect.left + window.scrollX;
+          const pw = 360;
+
+          if (left + pw > window.innerWidth - 16) left = window.innerWidth - pw - 16;
+          if (left < 16) left = 16;
+
+          popup.style.top  = top + 'px';
+          popup.style.left = left + 'px';
+        }
+
+        function close() {
+          popup.classList.remove('active');
+          overlay.classList.remove('active');
+        }
+
+        closeBtn.addEventListener('click', close);
+        overlay.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+        // Wire up footnote refs — remark-gfm uses href="#user-content-fn-N"
+        document.addEventListener('DOMContentLoaded', () => {
+          const refs = document.querySelectorAll('a[href^="#user-content-fn-"], a[href^="#fn-"]');
+          refs.forEach((ref) => {
+            ref.addEventListener('click', (e) => {
+              e.preventDefault();
+              const href = ref.getAttribute('href');
+              const id   = href.startsWith('#') ? href.slice(1) : href;
+              const fnEl = document.getElementById(id);
+              if (!fnEl) return;
+
+              const clone = fnEl.cloneNode(true);
+              // Remove the ↩ back-reference link remark-gfm appends
+              const backref = clone.querySelector('a[href^="#user-content-fnref"], a[href^="#fnref"]');
+              if (backref) backref.parentNode.removeChild(backref);
+
+              open(ref, ref.textContent.trim(), clone.innerHTML);
+            });
+          });
+        });
+      })();
+    </script>
+
+  </body>
+</html>

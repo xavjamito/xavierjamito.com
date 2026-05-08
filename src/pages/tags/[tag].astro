@@ -1,0 +1,55 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { toTagSlug } from '../../utils/tags';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  const tagGroups = new Map<string, { name: string; posts: typeof posts }>();
+
+  posts.forEach((post) => {
+    post.data.tags.forEach((tag) => {
+      const slug = toTagSlug(tag);
+      const group = tagGroups.get(slug);
+
+      if (group) {
+        group.posts.push(post);
+        return;
+      }
+
+      tagGroups.set(slug, { name: tag, posts: [post] });
+    });
+  });
+
+  return [...tagGroups.entries()].map(([tag, group]) => ({
+    params: { tag },
+    props: { tagName: group.name, posts: group.posts },
+  }));
+}
+
+const { tagName, posts } = Astro.props;
+const sorted = posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title={`#${tagName} — Xavier Jamito`}>
+  <div class="mb-10">
+    <a href="/tags" class="text-sm transition-colors" style="color: var(--color-text-muted);">← all tags</a>
+    <h1 class="font-serif text-2xl font-medium mt-4" style="color: var(--color-text);">#{tagName}</h1>
+    <p class="text-sm mt-1" style="color: var(--color-text-muted);">{sorted.length} post{sorted.length !== 1 ? 's' : ''}</p>
+  </div>
+
+  <ul class="space-y-8">
+    {sorted.map((post) => (
+      <li>
+        <a href={`/blog/${post.slug}`} class="group block">
+          <h2 class="font-serif text-lg font-medium mb-1 transition-colors" style="color: var(--color-text);">
+            {post.data.title}
+          </h2>
+          <p class="text-sm" style="color: var(--color-text-muted);">
+            {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

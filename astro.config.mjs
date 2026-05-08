@@ -1,14 +1,12 @@
-// @ts-check
 import { defineConfig } from 'astro/config';
-
 import mdx from '@astrojs/mdx';
-import tailwindcss from '@tailwindcss/vite';
+import tailwind from '@astrojs/tailwind';
+import remarkGfm from 'remark-gfm';
 
-// https://astro.build/config
 export default defineConfig({
-  integrations: [mdx()],
-
-  vite: {
-    plugins: [tailwindcss()]
-  }
+  site: 'https://xavierjamito.com',
+  integrations: [mdx(), tailwind()],
+  markdown: {
+    remarkPlugins: [remarkGfm],
+  },
 });

@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { toTagSlug } from '../../utils/tags';
+
+const posts = await getCollection('blog', ({ data }) => !data.draft);
+const tagMap = new Map();
+posts.forEach((post) => {
+  post.data.tags.forEach((tag) => tagMap.set(tag, (tagMap.get(tag) || 0) + 1));
+});
+const tags = [...tagMap.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="Tags — Xavier Jamito">
+  <h1 class="font-serif text-2xl font-medium mb-8" style="color: var(--color-text);">Tags</h1>
+  <ul class="flex flex-wrap gap-3">
+    {tags.map(([tag, count]) => (
+      <li>
+        <a
+          href={`/tags/${toTagSlug(tag)}`}
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded border text-sm transition-colors"
+          style="border-color: var(--color-border); color: var(--color-text-muted);"
+        >
+          {tag}
+          <span class="opacity-60 text-xs">{count}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

@@ -1,0 +1,59 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { toTagSlug } from '../../utils/tags';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+
+const formattedDate = post.data.date.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <article>
+    <header class="mb-10">
+      <h1 class="font-serif text-3xl font-medium leading-tight mb-3" style="color: var(--color-text);">
+        {post.data.title}
+      </h1>
+      <div class="flex items-center gap-3 text-sm flex-wrap" style="color: var(--color-text-muted);">
+        <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+        {post.data.tags.length > 0 && (
+          <>
+            <span>·</span>
+            <div class="flex gap-2 flex-wrap">
+              {post.data.tags.map((tag) => (
+                <a
+                  href={`/tags/${toTagSlug(tag)}`}
+                  class="px-2 py-0.5 rounded border transition-colors"
+                  style="border-color: var(--color-border); color: var(--color-text-muted);"
+                >
+                  {tag}
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </header>
+
+    <div class="prose prose-lg dark:prose-invert max-w-none
+      prose-headings:font-serif prose-headings:font-medium
+      prose-blockquote:not-italic
+      prose-blockquote:border-l-amber-700
+      prose-code:before:content-none prose-code:after:content-none
+      prose-code:rounded prose-code:px-1">
+      <Content />
+    </div>
+  </article>
+
+  <nav class="mt-16 pt-8 border-t" style="border-color: var(--color-border);">
+    <a href="/" class="text-sm transition-colors" style="color: var(--color-text-muted);">← all posts</a>
+  </nav>
+</BaseLayout>

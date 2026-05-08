@@ -1,0 +1,32 @@
+---
+---
+<button
+  id="theme-toggle"
+  aria-label="Toggle light/dark mode"
+  class="text-sm px-3 py-1.5 rounded-md border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+>
+  <span id="theme-icon"></span>
+</button>
+
+<script is:inline>
+  const toggle = document.getElementById('theme-toggle');
+  const icon = document.getElementById('theme-icon');
+
+  function getTheme() {
+    return localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+
+  applyTheme(getTheme());
+
+  toggle.addEventListener('click', () => {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+</script>
